@@ -32,6 +32,10 @@ def getMeaning(word):
         return "None"
 
 @app.route('/')
+def startpage():
+    return render_template('source.html')
+    
+@app.route('/game')
 def index():
     return render_template('index.html')
 
@@ -62,4 +66,4 @@ def check_answer():
 if __name__ == '__main__':
     if not os.path.exists('static'):
         os.makedirs('static')
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5001)
