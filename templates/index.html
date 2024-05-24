@@ -2,36 +2,37 @@
 <html>
 <head>
     <title>Word Master Game</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="static/style.css">
-    <style>
-        body {
-            background-image: url("{{ url_for('static', filename='bg.png') }}");
-        }
-    </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container text-center">
         <h1>Word Master 10/10</h1>
         <div class="word" id="word"></div>
         <div class="meaning" id="meaning"></div>
-        <audio id="audio" controls>
+        <audio id="audio" controls class="w-100 my-3">
             <source id="audioSource" src="" type="audio/mpeg">
             Your browser does not support the audio element.
         </audio>
-        <div class="input-group">
-            <input type="text" id="answer" placeholder="Type your answer here" required>
-            <button id="submit-btn" onclick="checkAnswer()">Submit</button>
+        <div class="input-group d-flex justify-content-center">
+            <div id="otp-inputs" class="d-flex justify-content-center"></div>
         </div>
+        <button id="submit-btn" class="btn btn-primary" onclick="checkAnswer()">Submit</button>
         <div class="result" id="result"></div>
-        <button class="next-button" onclick="loadWord()">Next</button>
+        <button class="btn btn-secondary next-button" onclick="loadWord()" id="nxt">Next</button>
         <div class="score" id="score"></div>
+        <div>
+            <div>
+                <button class="btn btn-light" onclick="hintOption1()" id="hint"><i class="fas fa-lightbulb"></i> Hint 1</button>
+            </div>
+        </div>
     </div>
 
     <div id="scoreModal" class="modal">
         <div class="modal-content">
             <h2>Game Over!</h2>
             <p id="finalScore"></p>
-            <button onclick="closeModal()">Close</button>
+            <button class="btn btn-primary" onclick="closeModal()">Close</button>
         </div>
     </div>
 
@@ -39,70 +40,117 @@
         let currentWord = '';
         let currentMeaning = '';
         let score = 0;
-        const totalWords = 3; 
+        const totalWords = 10;
         let wordCount = 0;
+        let attempts = 3; 
 
         async function loadWord() {
+            attempts=3
+            document.getElementById('submit-btn').disabled = false;
+            document.getElementById('hint').disabled = false;
+            document.getElementById('nxt').disabled = true;
             if (wordCount >= totalWords) {
                 showFinalScore();
-                score = 0;
-                wordCount = 0;
                 document.getElementById('score').innerText = 'Score: ' + score;
             }
             const response = await fetch('/get_word');
             const data = await response.json();
             currentWord = data.word;
             currentMeaning = data.meaning;
-            word=document.getElementById('word');
-            word.innerText = currentWord;
-            word.style.color="transparent"
-            word.style.textShadow="0 0 20px #000"
+            document.getElementById('word').innerText = currentWord;
+            document.getElementById('word').style.color = "transparent";
+            document.getElementById('word').style.textShadow = "0 0 20px #000";
             document.getElementById('meaning').innerText = currentMeaning;
-            document.getElementById('answer').value = '';
             document.getElementById('result').innerText = '';
+
             const audioSource = document.getElementById('audioSource');
             audioSource.src = `static/output.mp3?cacheBuster=${new Date().getTime()}`;
             const audio = document.getElementById('audio');
             audio.load();
+
+            generateOtpInputs(currentWord.length);
             wordCount++;
-            document.getElementById('submit-btn').disabled = false;
+        }
+
+        function generateOtpInputs(length) {
+            const container = document.getElementById('otp-inputs');
+            container.innerHTML = '';
+            for (let i = 0; i < length; i++) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.maxLength = 1;
+                input.className = 'otp-input form-control';
+                input.oninput = handleOtpInput;
+                container.appendChild(input);
+            }
+        }
+
+        function handleOtpInput(event) {
+            const input = event.target;
+            if (input.value.length === 1) {
+                const nextInput = input.nextElementSibling;
+                if (nextInput && nextInput.classList.contains('otp-input')) {
+                    nextInput.focus();
+                }
+            }
+        }
+
+        function hintOption1() {
+            const inputs = document.querySelectorAll('.otp-input');
+            const wordLetters = currentWord.split('');
+            inputs.forEach((input, index) => {
+                if (input.value.toLowerCase() !== wordLetters[index].toLowerCase()) {
+                    input.style.borderColor = 'red';
+                }
+            });
+            document.getElementById('hint').disabled = true;
         }
 
         async function checkAnswer() {
-            let answer = document.getElementById('answer').value;
+            const inputs = document.querySelectorAll('.otp-input');
+            let answer = '';
+            inputs.forEach(input => answer += input.value);
             const resultElement = document.getElementById('result');
-            document.getElementById('submit-btn').disabled = true;
-            if (answer.trim() === '') {
-                resultElement.innerText = 'Please enter word.';
-                resultElement.className = 'result error';
-                document.getElementById('submit-btn').disabled = false;
+            if (answer.trim().length !== currentWord.length) {
+                resultElement.innerText = 'Please enter the complete word.';
+                resultElement.className = 'result text-danger';
                 return;
             }
-            const response = await fetch('/check_answer', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ answer: answer, word: currentWord }),
-            });
-            const data = await response.json();
-            const wordElement = document.getElementById('word');
-            wordElement.style.textShadow="0 0 0"
-            wordElement.style.color="black"
-            if (data.correct) {
-                score++;
+
+            let isCorrect = true;
+            if(answer === currentWord) {
+                score=getScore(attempts)
                 resultElement.innerText = 'Correct!';
-                resultElement.className = 'result success';
+                resultElement.className = 'result text-success';
+                document.getElementById('nxt').disabled = false;
             } else {
-                resultElement.innerText = 'Incorrect. The correct spelling is ' + currentWord;
-                resultElement.className = 'result error';
+                resultElement.innerText = `Incorrect. You have ${--attempts} attempts left.`;
+                resultElement.className = 'result text-danger';
+                if (attempts === 0) {
+                    resultElement.innerText += ` The correct spelling is ${currentWord}`;
+                    document.getElementById('submit-btn').disabled = true;
+                    document.getElementById('hint').disabled = true;
+                    document.getElementById('nxt').disabled = false;
+                    return;
+                }
             }
             document.getElementById('score').innerText = 'Score: ' + score;
         }
-
         function showFinalScore() {
             document.getElementById('finalScore').innerText = 'Your final score is: ' + score;
             document.getElementById('scoreModal').style.display = 'flex';
+        }
+
+        function getScore(attempts) {
+            if(attempts===3) {
+                return 3
+            }
+            else if(attempts===3) {
+                return 2
+            }
+            else {
+                return 1
+            }
         }
 
         function closeModal() {
@@ -115,5 +163,8 @@
 
         window.onload = loadWord;
     </script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
