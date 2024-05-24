@@ -119,7 +119,7 @@
 
             let isCorrect = true;
             if(answer === currentWord) {
-                score=getScore(attempts)
+                score=score+getScore(attempts)
                 resultElement.innerText = 'Correct!';
                 resultElement.className = 'result text-success';
                 document.getElementById('nxt').disabled = false;
