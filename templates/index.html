@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Word Master Game</title>
+    <link rel="stylesheet" href="static/style.css">
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='bg.png') }}");
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Word Master 10/10</h1>
+        <div class="word" id="word"></div>
+        <div class="meaning" id="meaning"></div>
+        <audio id="audio" controls>
+            <source id="audioSource" src="" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+        <div class="input-group">
+            <input type="text" id="answer" placeholder="Type your answer here" required>
+            <button id="submit-btn" onclick="checkAnswer()">Submit</button>
+        </div>
+        <div class="result" id="result"></div>
+        <button class="next-button" onclick="loadWord()">Next</button>
+        <div class="score" id="score"></div>
+    </div>
+
+    <div id="scoreModal" class="modal">
+        <div class="modal-content">
+            <h2>Game Over!</h2>
+            <p id="finalScore"></p>
+            <button onclick="closeModal()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        let currentWord = '';
+        let currentMeaning = '';
+        let score = 0;
+        const totalWords = 3; 
+        let wordCount = 0;
+
+        async function loadWord() {
+            if (wordCount >= totalWords) {
+                showFinalScore();
+                score = 0;
+                wordCount = 0;
+                document.getElementById('score').innerText = 'Score: ' + score;
+            }
+            const response = await fetch('/get_word');
+            const data = await response.json();
+            currentWord = data.word;
+            currentMeaning = data.meaning;
+            word=document.getElementById('word');
+            word.innerText = currentWord;
+            word.style.color="transparent"
+            word.style.textShadow="0 0 20px #000"
+            document.getElementById('meaning').innerText = currentMeaning;
+            document.getElementById('answer').value = '';
+            document.getElementById('result').innerText = '';
+            const audioSource = document.getElementById('audioSource');
+            audioSource.src = `static/output.mp3?cacheBuster=${new Date().getTime()}`;
+            const audio = document.getElementById('audio');
+            audio.load();
+            wordCount++;
+            document.getElementById('submit-btn').disabled = false;
+        }
+
+        async function checkAnswer() {
+            let answer = document.getElementById('answer').value;
+            const resultElement = document.getElementById('result');
+            document.getElementById('submit-btn').disabled = true;
+            if (answer.trim() === '') {
+                resultElement.innerText = 'Please enter word.';
+                resultElement.className = 'result error';
+                document.getElementById('submit-btn').disabled = false;
+                return;
+            }
+            const response = await fetch('/check_answer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ answer: answer, word: currentWord }),
+            });
+            const data = await response.json();
+            const wordElement = document.getElementById('word');
+            wordElement.style.textShadow="0 0 0"
+            wordElement.style.color="black"
+            if (data.correct) {
+                score++;
+                resultElement.innerText = 'Correct!';
+                resultElement.className = 'result success';
+            } else {
+                resultElement.innerText = 'Incorrect. The correct spelling is ' + currentWord;
+                resultElement.className = 'result error';
+            }
+            document.getElementById('score').innerText = 'Score: ' + score;
+        }
+
+        function showFinalScore() {
+            document.getElementById('finalScore').innerText = 'Your final score is: ' + score;
+            document.getElementById('scoreModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('scoreModal').style.display = 'none';
+            score = 0;
+            wordCount = 0;
+            document.getElementById('score').innerText = 'Score: ' + score;
+            loadWord();
+        }
+
+        window.onload = loadWord;
+    </script>
+</body>
+</html>
