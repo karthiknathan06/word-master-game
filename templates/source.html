@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Word Master - Select Level</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container text-center mt-5">
+        <h1>Welcome to the Word Master Game</h1>
+        <p class="lead">Select your level to start the game:</p>
+        <div class="btn-group" role="group">
+            <button class="btn btn-primary" onclick="startGame('beginner')">Beginner</button>
+            <button class="btn btn-secondary" onclick="startGame('advanced')">Advanced</button>
+        </div>
+    </div>
+    <script>
+        function startGame(level) {
+            window.location.href = `/game`;
+        }
+    </script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
