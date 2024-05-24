@@ -23,7 +23,8 @@
         <div class="score" id="score"></div>
         <div>
             <div>
-                <button class="btn btn-light" onclick="hintOption1()" id="hint"><i class="fas fa-lightbulb"></i> Hint 1</button>
+                <button class="btn btn-light" onclick="hintOption1()" id="hint1"><i class="fas fa-lightbulb"></i> Hint 1</button>
+                <button class="btn btn-light" onclick="hintOption2()" id="hint2"><i class="fas fa-lightbulb"></i> Hint 2</button>
             </div>
         </div>
     </div>
@@ -47,7 +48,8 @@
         async function loadWord() {
             attempts=3
             document.getElementById('submit-btn').disabled = false;
-            document.getElementById('hint').disabled = false;
+            document.getElementById('hint1').disabled = false;
+            document.getElementById('hint2').disabled = false;
             document.getElementById('nxt').disabled = true;
             if (wordCount >= totalWords) {
                 showFinalScore();
@@ -60,7 +62,6 @@
             document.getElementById('word').innerText = currentWord;
             document.getElementById('word').style.color = "transparent";
             document.getElementById('word').style.textShadow = "0 0 20px #000";
-            document.getElementById('meaning').innerText = currentMeaning;
             document.getElementById('result').innerText = '';
 
             const audioSource = document.getElementById('audioSource');
@@ -96,6 +97,11 @@
         }
 
         function hintOption1() {
+            document.getElementById('meaning').innerText = currentMeaning;
+            document.getElementById('hint1').disabled = true;
+        }
+
+        function hintOption2() {
             const inputs = document.querySelectorAll('.otp-input');
             const wordLetters = currentWord.split('');
             inputs.forEach((input, index) => {
@@ -103,7 +109,7 @@
                     input.style.borderColor = 'red';
                 }
             });
-            document.getElementById('hint').disabled = true;
+            document.getElementById('hint2').disabled = true;
         }
 
         async function checkAnswer() {
